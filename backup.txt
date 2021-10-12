@@ -1,0 +1,372 @@
+#include <iostream>
+#include <windows.h>  
+#include <minwindef.h>  
+
+class Vector
+{
+public:
+    int x, y;
+    Vector(int _x = -1, int _y = -1)
+    {
+        x = _x;
+        y = _y;
+    }
+
+    Vector operator + (Vector const& _vec) {return Vector(x + _vec.x, y + _vec.y);}
+    Vector operator - (Vector const& _vec) {return Vector(x - _vec.x, y - _vec.y);}
+
+    bool operator ! () { if (x == -1 || y == -1) return true; return false; }
+
+    bool operator < (Vector const& vec) { if (x < vec.x && y < vec.y) return true; return false; }
+    bool operator > (Vector const& vec) { if (x > vec.x && y > vec.y) return true; return false; }
+    bool operator <= (Vector const& vec) { if (x <= vec.x && y <= vec.y) return true; return false; }
+    bool operator >= (Vector const& vec) { if (x >= vec.x && y >= vec.y) return true; return false; }
+};
+
+class Piece 
+{
+public:
+    //Vector position; // pozycja na mapie
+    bool player; // 0 - biali, na dole; 1 - czarni, na górze
+    char symbol; // symbol na mapie
+
+    Vector* possible_moves; // tablica vektorow mozliwych ruchów wzgledem pionka
+    int possible_moves_size; // wielkosc tej tablicy
+
+    virtual void define_moves() = 0; // nadaawanie warości wektorom w possivle_moves
+
+    void move(Vector _new_position)
+    {
+        //position = _new_position;   
+    }
+
+    Piece(bool _player/*,Vector _position*/)
+    {
+        player = _player;
+        //position = _position;
+    }
+    ~Piece()
+    {
+        delete[] possible_moves;
+    }
+};
+
+class Pawn : public Piece 
+{
+public:
+    void define_moves()
+    {
+        // domyślnie zdefiniowany jest ruch białego
+        possible_moves = new Vector[possible_moves_size];
+        possible_moves[0] = Vector(0, -1);
+        possible_moves[1] = Vector(0, -2);
+    }
+
+    Pawn(int _player, Vector _position): Piece(_player/*, _position*/)
+    {
+        symbol = 'P';
+        possible_moves_size = 2;
+        define_moves();
+    }
+};
+
+class Knight : public Piece
+{
+public:
+    void define_moves()
+    {
+        possible_moves = new Vector[possible_moves_size];
+        possible_moves[0] = Vector(2, 1);
+        possible_moves[1] = Vector(1, 2);
+        possible_moves[2] = Vector(-1, 2);
+        possible_moves[3] = Vector(-2, 1);
+        possible_moves[4] = Vector(-2, -1);
+        possible_moves[5] = Vector(-1, -2);
+        possible_moves[6] = Vector(1, -2);
+        possible_moves[7] = Vector(2, -1);
+    }
+
+    Knight(int _player, Vector _position) : Piece(_player/*, _position*/)
+    {
+        symbol = 'K';
+        possible_moves_size = 8;
+        define_moves();
+    }
+};
+
+class Map
+{
+public:
+    Piece* tile[8][8]; // tablica wskaźników to pionków
+    Vector selected = Vector();
+
+    void clear() // nadpisanie nullptr 
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                tile[i][j] = nullptr;
+            }
+        }
+    } 
+    void build() // stworzenie pionków i przypisanie ich adresów tile i nadanie pozycji wewnątrz pionków
+    {
+        // pionki
+        for (int i = 0; i < 8; i++) tile[i][1] = new Pawn(1, Vector(i, 1));
+        for (int i = 0; i < 8; i++) tile[i][6] = new Pawn(0, Vector(i, 6));
+
+        /*for (int i = 0; i < 8; i++) tile[i][1]->position = Vector(i, 1);
+        for (int i = 0; i < 8; i++) tile[i][6]->position = Vector(i, 6);*/
+        // skoczki
+        tile[1][0] = new Knight(1, Vector(1,0));
+        tile[6][0] = new Knight(1, Vector(6,0));
+        tile[1][7] = new Knight(0, Vector(1,7));
+        tile[6][7] = new Knight(0, Vector(6,7));
+    }
+
+    bool select(Vector _vec) 
+    {
+        if (!tile[_vec.x][_vec.y])
+        {
+            selected = Vector();
+            return 0;
+        }
+        selected = _vec;
+        return 1;
+    }
+    Vector* calculate_possible()
+    {
+        if (!tile[selected.x][selected.y] || !selected) return new Vector(-1, -1);
+
+        Vector* highlighted_candidate = new Vector[tile[selected.x][selected.y]->possible_moves_size];
+
+        int j = 0;
+        for (int i = 0; i < tile[selected.x][selected.y]->possible_moves_size; i++)
+        {
+            //std::cout << "test: (" << i << ", " << j << "), " << a << std::endl;
+            Vector candidate = tile[selected.x][selected.y]->player ?
+                Vector(selected.x, selected.y) - tile[selected.x][selected.y]->possible_moves[i] :
+                Vector(selected.x, selected.y) + tile[selected.x][selected.y]->possible_moves[i];
+
+            if ((candidate) >= Vector(0, 0) && (candidate) <= Vector(7, 7))
+            {
+                highlighted_candidate[j] = candidate;
+                j++;
+            }
+        }
+
+        Vector* highlighted = new Vector[j];
+
+        for (int i = 0; i < j; i++)
+        {
+            highlighted[i] = highlighted_candidate[i];
+        }
+
+        delete[] highlighted_candidate;
+        highlighted[j] = Vector();
+
+        //for (int i = 0; i < tile[_selected.x][_selected.y]->possible_moves_size; i++) std::cout << "(" << highlighted[i].x << ", " << highlighted[i].y << ")\n";
+        return highlighted;
+    }
+
+    void print(Vector* _highlighted)
+    {
+        // kolory
+        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+        char foreground = 0, background = 0;
+
+        // górna krawędź
+        std::cout << "  A B C D E F G H"<< std::endl;
+        std::cout << ' ' << char(218);
+        for (int i = 0; i < 16; i++) std::cout << char(196);
+        std::cout << char(191) << std::endl;
+
+        for (int j = 0; j < 8; j++)
+        {
+            std::cout << j + 1 << char(179);
+            for (int i = 0; i < 8; i++)
+            {
+                if (tile[i][j])
+                {
+                    foreground = (tile[i][j]->player) ? 0 : 15; // nadanie koloru tekstowi zależnie od gracza 
+                }
+
+                background = (i + j) % 2 + 7; // szachownica
+                for (int a = 0; !!_highlighted[a]; a++)
+                {
+                    if (_highlighted[a].x == i && _highlighted[a].y == j) 
+                        background = 11;
+                }
+
+                SetConsoleTextAttribute(hConsole, foreground + background * 16); // tu można sumowaniem binarnym
+
+                // rysowanie pionka/pustego pola
+                if (tile[i][j])
+                    std::cout << tile[i][j]->symbol << ' ';
+                else
+                    std::cout << ' ' << ' ';
+            }
+            SetConsoleTextAttribute(hConsole, 7);
+            std::cout << char(179) <<  std::endl;
+        }
+        // dolna krawędź
+        std::cout << ' ' << char(192);
+        for (int i = 0; i < 16; i++) std::cout << char(196); 
+        std::cout << char(217) << std::endl;
+    }
+
+    void move(Vector intent)
+    {
+       // selected->move(intent);
+    }
+
+    Map()
+    {
+        clear();
+    }
+    ~Map()
+    {
+        clear();
+    }
+};
+
+class Input
+{
+public:
+    Vector fetchInput() // próba do skutku uzyskania właściwego inputu
+    {
+        Vector try_input;
+        while (true) 
+        {
+            try_input = tryInput();
+            if (!!try_input)
+            {
+                return try_input;
+            }
+        }
+    }
+    Vector tryInput() // uzystanie vektora pozycji poionka z inputu
+    {
+        std::string input;
+        Vector input_vector;
+        std::cin >> input;
+        if ((input.size() == 2) &&
+            ((input[0] >= 65 && input[0] <= 72) ||
+             (input[0] >= 97 && input[0] <= 104)) &&
+            (input[1] >= 49 && input[1] <= 56))
+        {
+            input_vector.x = (input[0] < 80) ? input[0] - 65 : input[0] - 97;
+            input_vector.y = input[1] - 49;
+        }
+        else
+        {
+            std::cout << "Invalid input" << std::endl;
+        }
+        return input_vector;
+    }
+};
+
+class GameController
+{
+public:
+    void execute_turn(bool _player)
+    {
+        /*
+        Exaple:
+
+        Choose a piece: \input\
+        \pokazuje szachownicę z możliwymi ruchami\
+        Choose location: \input\ (ewentualnie cancel)
+        */
+        //map.print(map.calculate_possible(Vector(6, 7)));
+
+        while(true)
+        {
+
+            Map map;
+            Input input;
+            Vector player_input;
+
+            map.clear();
+            map.build();
+
+            map.print(new Vector());
+            std::cout << "Choose a piece: ";
+            player_input = input.fetchInput();
+            system("cls");
+            map.select(player_input); // TUTAJ NIE DOPUŚIĆ DO WYBRANIA PUSTEGO POLA
+            map.print(map.calculate_possible());
+
+            std::cout << "Choose location :";
+            player_input = input.fetchInput();
+            system("cls");
+            map.move(player_input);
+
+
+        }
+        
+    }
+};
+int main()
+{
+    GameController game_controller;
+    game_controller.execute_turn(0);
+
+    
+    //map.print(Vector());
+
+    //Vector* highlighted = new Vector[8];
+    //highlighted[0] = Vector(1, 2);
+    //highlighted[1] = Vector(1, 2);
+    //highlighted[2] = Vector(1, 2);
+    //highlighted[3] = Vector(1, 2);
+    //highlighted[4] = Vector(1, 2);
+
+    //delete &highlighted[7];
+    //for (int i = 0; i < 8; i++) std::cout << "(" << highlighted[i].x << ", " << highlighted[i].y << ")\n";
+
+}
+
+
+
+
+/*
+
+  Vector* calculate_possible(Vector _selected)
+    {
+        if (!tile[_selected.x][_selected.y]) return new Vector(-1, -1);
+
+        Vector* highlighted_candidate = new Vector[tile[_selected.x][_selected.y]->possible_moves_size];
+
+        int j = 0;
+        for (int i = 0; i < tile[_selected.x][_selected.y]->possible_moves_size; i++)
+        {
+            //std::cout << "test: (" << i << ", " << j << "), " << a << std::endl;
+            Vector candidate = tile[_selected.x][_selected.y]->player ?
+                Vector(_selected.x, _selected.y) - tile[_selected.x][_selected.y]->possible_moves[i] :
+                Vector(_selected.x, _selected.y) + tile[_selected.x][_selected.y]->possible_moves[i];
+
+            if ((candidate) >= Vector(0, 0) && (candidate) <= Vector(7, 7))
+            {
+                highlighted_candidate[j] = candidate;
+                j++;
+            }
+        }
+
+        Vector* highlighted = new Vector[j];
+
+        for (int i = 0; i < j; i++)
+        {
+            highlighted[i] = highlighted_candidate[i];
+        }
+
+        delete[] highlighted_candidate;
+        highlighted[j] = Vector();
+
+        //for (int i = 0; i < tile[_selected.x][_selected.y]->possible_moves_size; i++) std::cout << "(" << highlighted[i].x << ", " << highlighted[i].y << ")\n";
+        return highlighted;
+    }
+
+
+*/
