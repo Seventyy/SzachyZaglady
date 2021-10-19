@@ -14,6 +14,11 @@ void King::define_moves()
     possible_moves[7] = Vector(1, -1);
 }
 
+void King::moved()
+{
+
+}
+
 King::King(int _player) : Piece(_player)
 {
     symbol = 'M'; // plusminus

@@ -73,3 +73,22 @@ void pirug_kwadratowy()
      }
  */
 }
+
+void piramidki()
+{
+    int n;
+    std::cin >> n;
+
+    for (int i = 0; n > 0; i++)
+    {
+        for (int j = 0; j < i + 1; j++)
+        {
+            if (n > 0)
+            {
+                std::cout << '*';
+                n--;
+            }
+        }
+        std::cout << '\n';
+    }
+}

@@ -6,4 +6,5 @@ class Knight : public Piece
 public:
     void define_moves();
     Knight(int _player);
+    void moved();
 };

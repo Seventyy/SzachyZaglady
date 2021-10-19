@@ -4,7 +4,7 @@
 
 class Input
 {
-public:Œ
+public:
 
     // altenatywne werje inputu
     // anulowanie wybrania figury

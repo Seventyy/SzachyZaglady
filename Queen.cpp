@@ -69,6 +69,12 @@ void Queen::define_moves()
     possible_moves[55] = Vector(7, -7);
 }
 
+
+void Queen::moved()
+{
+
+}
+
 Queen::Queen(int _player) : Piece(_player)
 {
     symbol = 'Q';

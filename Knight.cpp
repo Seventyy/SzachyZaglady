@@ -13,6 +13,11 @@ void Knight::define_moves()
     possible_moves[7] = Vector(2, -1);
 }
 
+void Knight::moved()
+{
+
+}
+
 Knight::Knight(int _player) : Piece(_player)
 {
     symbol = 'K';

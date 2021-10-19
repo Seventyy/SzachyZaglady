@@ -51,8 +51,6 @@ void Map::build() // stworzenie pionków i przypisanie ich adresów tile i nadanie
     // króle
     tile[4][0] = new King(1);
     tile[4][7] = new King(0);
-
-
 }
 
 bool Map::select(Vector _vec)
@@ -198,6 +196,8 @@ void Map::print(Vector* _highlighted)
 
 void Map::move(Vector _intent)
 {
+    if (!tile[selected.x][selected.y]->has_moved)
+        tile[selected.x][selected.y]->moved();
     tile[_intent.x][_intent.y] = tile[selected.x][selected.y];
     tile[selected.x][selected.y] = nullptr;
 }

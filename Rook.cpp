@@ -36,6 +36,12 @@ void Rook::define_moves()
     possible_moves[27] = Vector(0, -7);
 }
 
+
+void Rook::moved()
+{
+
+}
+
 Rook::Rook(int _player) : Piece(_player)
 {
     symbol = 'R';

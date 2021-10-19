@@ -1,6 +1,7 @@
 ﻿#include <iostream>
-#include <windows.h>  
+#include <windows.h>
 #include <minwindef.h>  
+// chyba niepotrzebne^
 
 #include "Vector.h"
 #include "Piece.h"
@@ -9,12 +10,16 @@
 #include "Map.h"
 #include "Input.h"
 #include "GameController.h"
-//#include "Pirug.h"
+#include "Pirug.h"
 
 int main()
 {   
+    //piramidki();
     GameController game_controller;
     game_controller.execute_turn(0);
+
+
+    // na podśiwetlonych tilach moznaby wyśiwetlać kordy
 }
 
 

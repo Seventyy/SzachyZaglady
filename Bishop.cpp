@@ -36,6 +36,11 @@ void Bishop::define_moves()
     possible_moves[27] = Vector(7, -7);
 }
 
+void Bishop::moved()
+{
+
+}
+
 Bishop::Bishop(int _player) : Piece(_player)
 {
     symbol = 'B';
